@@ -29,7 +29,7 @@ docker pull mcr.microsoft.com/mssql/server:2022-latest
 # Run a new container with the pulled image, sử dụng bind mount
 docker run -e "ACCEPT_EULA=Y" \
   -e "MSSQL_SA_PASSWORD=01882904300Huy@" \
-  -e "MSSQL_PID=Evaluation" \
+  -e "MSSQL_PID=Express" \
   -p 0.0.0.0:1433:1433 \
   --name sqlpreview \
   -v "$BIND_MOUNT_PATH:/var/opt/mssql" \

@@ -3,7 +3,7 @@
 # Dừng và xóa tất cả container
 echo "Đang dừng và xóa tất cả container..."
 docker ps -a -q | xargs -r docker stop
-docker ps -a -q | xargs -r docker rm
+    docker ps -a -q | xargs -r docker rm
 
 # Xóa tất cả image
 echo "Đang xóa tất cả image..."
