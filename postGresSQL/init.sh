@@ -6,7 +6,7 @@ OS=$(uname -s)
 # Đặt đường dẫn bind mount dựa trên hệ điều hành
 case "$OS" in
   Linux*)   # Ubuntu hoặc các hệ điều hành Linux-based
-    BIND_MOUNT_PATH="/var/www/csdl_data/postgres"
+    BIND_MOUNT_PATH="/home/csdl_data/postgres"
     ;;
   Darwin*)  # macOS
     BIND_MOUNT_PATH="/Users/user/Desktop/Code_Data/data_csdl/postgres"

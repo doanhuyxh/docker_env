@@ -47,16 +47,40 @@ rm packages-microsoft-prod.deb
 apt update
 apt-get install -y dotnet-sdk-8.0
 
-# Install Docker
-echo "Installing Docker..."
-snap install docker
+# Install Docker via apt (following https://docs.docker.com/engine/install/ubuntu/)
+echo "Installing Docker via apt..."
+# Uninstall old versions (if any)
+apt remove -y docker docker-engine docker.io containerd runc || true
+# Install prerequisites
+apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+# Add Docker's official GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+# Add Docker repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Update package index and install Docker
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# Start and enable Docker service
+systemctl enable docker
+systemctl enable containerd
+systemctl start docker
+# Add current user to docker group to run Docker without sudo (optional)
+usermod -aG docker $SUDO_USER || true
+
+# Verify Docker installation
+if ! docker --version; then
+    echo "Docker installation failed"
+    exit 1
+fi
+echo "Docker installation successful"
 
 # Install MSSQL Server
 echo "Installing MSSQL Server via Docker..."
 docker pull mcr.microsoft.com/mssql/server:2022-latest
-mkdir -p /var/www/csdl_data/mssql
+mkdir -p /home/csdl_data/mssql
 docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=01882904300Huy@" -e "MSSQL_PID=Evaluation" \
--p 1433:1433 --name sqlpreview -v /var/www/csdl_data/mssql:/var/opt/mssql -d mcr.microsoft.com/mssql/server:2022-latest
+-p 1433:1433 --name sqlpreview -v /home/csdl_data/mssql:/var/opt/mssql -d mcr.microsoft.com/mssql/server:2022-latest
 
 # Install nvm (Node Version Manager)
 echo "Installing nvm..."

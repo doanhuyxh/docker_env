@@ -6,7 +6,7 @@ OS=$(uname -s)
 # Đặt đường dẫn mount dựa trên hệ điều hành
 case "$OS" in
   Linux*)   # Ubuntu hoặc các hệ điều hành Linux-based
-    MOUNT_PATH="/var/www/csdl_data/mongo"
+    MOUNT_PATH="/home/csdl_data/mongo"
     ;;
   Darwin*)  # macOS
     MOUNT_PATH="/Users/user/Desktop/Code_Data/data_csdl/mongodb"
