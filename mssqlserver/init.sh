@@ -23,11 +23,16 @@ esac
 # Tạo thư mục bind mount nếu chưa tồn tại
 mkdir -p "$BIND_MOUNT_PATH"
 
+# Tạo Docker network nếu chưa tồn tại
+NETWORK_NAME="docker-app-network"
+docker network create $NETWORK_NAME 2>/dev/null || true
+
 # Pull the MS SQL Server image from Docker Hub
 docker pull mcr.microsoft.com/mssql/server:2022-latest
 
 # Run a new container with the pulled image, sử dụng bind mount
 docker run -e "ACCEPT_EULA=Y" \
+  --network $NETWORK_NAME \
   -e "MSSQL_SA_PASSWORD=01882904300Huy@" \
   -e "MSSQL_PID=Express" \
   -p 0.0.0.0:1433:1433 \

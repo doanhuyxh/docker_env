@@ -23,11 +23,16 @@ esac
 # Tạo thư mục mount nếu chưa tồn tại
 mkdir -p "$MOUNT_PATH"
 
+# Tạo Docker network nếu chưa tồn tại
+NETWORK_NAME="docker-app-network"
+docker network create $NETWORK_NAME 2>/dev/null || true
+
 # Pull the MongoDB image from Docker Hub
 docker pull mongo
 
 # Run a new container with the pulled image
 docker run -d --name mongo_database \
+  --network $NETWORK_NAME \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=01882904300Huy@ \
   -p 0.0.0.0:27017:27017 \

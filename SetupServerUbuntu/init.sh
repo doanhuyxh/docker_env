@@ -84,6 +84,10 @@ apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 systemctl enable --now docker
 usermod -aG docker $SUDO_USER || true
 
+# Tạo Docker network nếu chưa tồn tại
+NETWORK_NAME="docker-app-network"
+docker network create $NETWORK_NAME 2>/dev/null || true
+
 # ─────────────────────────────────────────────────────────────
 echo "🗄️ Cài đặt MSSQL Server (Docker)..."
 mkdir -p "$DATA_DIR/mssql"
@@ -91,6 +95,7 @@ docker rm -f sqlpreview 2>/dev/null || true
 docker pull "$MSSQL_IMAGE"
 echo "🧠 RAM ${TOTAL_RAM_MB}MB > 2GB → dùng bản Express"
 docker run --pull always \
+    --network $NETWORK_NAME \
     -e "ACCEPT_EULA=Y" \
     -e "MSSQL_SA_PASSWORD=$MSSQL_PASSWORD" \
     -e "MSSQL_PID=Express" \
@@ -105,6 +110,7 @@ mkdir -p "$DATA_DIR/mongo"
 docker rm -f mongo_database 2>/dev/null || true
 docker pull mongo
 docker run -d --name mongo_database \
+  --network $NETWORK_NAME \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD \
   -p 0.0.0.0:27017:27017 \
