@@ -43,6 +43,10 @@ echo "📦 Cài đặt công cụ cơ bản..."
 apt install -y git curl wget unzip unrar rar iperf3 python3-pip
 pip3 install --no-input speedtest-cli
 
+echo "📦 Cài đặt giám sát vps"
+apt install -y cockpit
+systemctl enable --now cockpit.socket
+
 # ─────────────────────────────────────────────────────────────
 echo "💻 Cài đặt .NET SDK 8.0..."
 wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
