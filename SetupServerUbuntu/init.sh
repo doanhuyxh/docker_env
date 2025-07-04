@@ -23,7 +23,7 @@ DATA_DIR="/home/csdl_data"
 
 # ─────────────────────────────────────────────────────────────
 echo "🚀 Cập nhật hệ thống..."
-apt update && apt upgrade -y
+apt update
 
 # Thiết lập múi giờ
 echo "🌏 Thiết lập múi giờ Asia/Ho_Chi_Minh..."
@@ -33,15 +33,12 @@ timedatectl set-timezone Asia/Ho_Chi_Minh
 echo "🔐 Thiết lập firewall với UFW..."
 apt install -y ufw
 ufw allow 22/tcp
-ufw allow 1433/tcp
-ufw allow 27017/tcp
 ufw --force enable
 ufw status
 
 # ─────────────────────────────────────────────────────────────
 echo "📦 Cài đặt công cụ cơ bản..."
-apt install -y git curl wget unzip unrar rar iperf3 python3-pip
-pip3 install --no-input speedtest-cli
+apt install -y git curl wget unzip unrar rar iperf3 python3-pip speedtest-cli
 
 echo "📦 Cài đặt giám sát vps"
 apt install -y cockpit
@@ -95,6 +92,8 @@ docker network create $NETWORK_NAME 2>/dev/null || true
 # ─────────────────────────────────────────────────────────────
 echo "🗄️ Cài đặt MSSQL Server (Docker)..."
 mkdir -p "$DATA_DIR/mssql"
+sudo chown -R 10001:0 "$DATA_DIR/mssql"
+sudo chmod -R 770 "$DATA_DIR/mssql"
 docker rm -f sqlpreview 2>/dev/null || true
 docker pull "$MSSQL_IMAGE"
 echo "🧠 RAM ${TOTAL_RAM_MB}MB > 2GB → dùng bản Express"
@@ -105,12 +104,14 @@ docker run --pull always \
     -e "MSSQL_PID=Express" \
     -p 0.0.0.0:1433:1433 \
     --name sqlpreview \
-    -v "$DATA_DIR/mssql":/var/opt/mssql \
+    -v "$DATA_DIR/mssql":/var/opt/mssql:z \
     -d "$MSSQL_IMAGE"
 
 # ─────────────────────────────────────────────────────────────
 echo "🍃 Cài đặt MongoDB (Docker)..."
 mkdir -p "$DATA_DIR/mongo"
+sudo chown -R 10001:0 "$DATA_DIR/mongo"
+sudo chmod -R 770 "$DATA_DIR/mongo"
 docker rm -f mongo_database 2>/dev/null || true
 docker pull mongo
 docker run -d --name mongo_database \
@@ -118,7 +119,7 @@ docker run -d --name mongo_database \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD \
   -p 0.0.0.0:27017:27017 \
-  -v "$DATA_DIR/mongo:/data/db" \
+  -v "$DATA_DIR/mongo":/data/db:z \
   mongo
 
 # ─────────────────────────────────────────────────────────────
