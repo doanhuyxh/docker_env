@@ -8,7 +8,6 @@
 # Cấu hình ban đầu
 set -e
 export DEBIAN_FRONTEND=noninteractive
-
 # Kiểm tra root
 if [ "$EUID" -ne 0 ]; then
   echo "❌ Vui lòng chạy script với quyền root (sudo)"
@@ -43,6 +42,13 @@ apt install -y git curl wget unzip unrar rar iperf3 python3-pip speedtest-cli
 echo "📦 Cài đặt giám sát vps"
 apt install -y cockpit
 systemctl enable --now cockpit.socket
+
+# ─────────────────────────────────────────────────────────────
+echo "📦 Cài đặt Cockpit và các plugin..."
+apt install -y cockpit-podman cockpit-storaged
+systemctl restart cockpit.socket
+
+
 
 # ─────────────────────────────────────────────────────────────
 echo "💻 Cài đặt .NET SDK 8.0..."
