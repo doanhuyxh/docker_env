@@ -8,6 +8,15 @@
 # Cấu hình ban đầu
 set -e
 export DEBIAN_FRONTEND=noninteractive
+# Tự động trả lời Yes cho tất cả câu hỏi
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+# Vô hiệu hóa các câu hỏi tương tác
+export UCF_FORCE_CONFFOLD=1
+export APT_LISTCHANGES_FRONTEND=none
+# Tự động khởi động lại dịch vụ không cần xác nhận
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
 # Kiểm tra root
 if [ "$EUID" -ne 0 ]; then
   echo "❌ Vui lòng chạy script với quyền root (sudo)"
@@ -22,7 +31,13 @@ DATA_DIR="/home/csdl_data"
 
 # ─────────────────────────────────────────────────────────────
 echo "🚀 Cập nhật hệ thống..."
-apt update
+apt update -y
+
+# Cài đặt needrestart với cấu hình tự động
+echo "🔄 Cài đặt needrestart để tự động khởi động lại dịch vụ..."
+apt install -y needrestart
+echo "\$nrconf{restart} = 'a';" >> /etc/needrestart/needrestart.conf
+echo "\$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
 
 # Thiết lập múi giờ
 echo "🌏 Thiết lập múi giờ Asia/Ho_Chi_Minh..."
@@ -46,7 +61,7 @@ systemctl enable --now cockpit.socket
 # ─────────────────────────────────────────────────────────────
 echo "📦 Cài đặt Cockpit và các plugin..."
 apt install -y cockpit-podman cockpit-storaged
-systemctl restart cockpit.socket
+systemctl reload-or-restart cockpit.socket
 
 
 
@@ -68,7 +83,7 @@ echo "🛡️ Cài đặt auditd để giám sát SSH..."
 apt install -y auditd
 systemctl enable --now auditd
 sed -i 's/#LogLevel INFO/LogLevel VERBOSE/' /etc/ssh/sshd_config
-systemctl restart sshd
+systemctl restart sshd --quiet
 
 # ─────────────────────────────────────────────────────────────
 echo "🌐 Cài đặt NGINX và Certbot..."
@@ -86,7 +101,7 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-apt update
+apt update -y
 apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 systemctl enable --now docker
 usermod -aG docker $SUDO_USER || true
@@ -96,22 +111,66 @@ NETWORK_NAME="docker-app-network"
 docker network create $NETWORK_NAME 2>/dev/null || true
 
 # ─────────────────────────────────────────────────────────────
-echo "🗄️ Cài đặt MSSQL Server (Docker)..."
-mkdir -p "$DATA_DIR/mssql"
-sudo chown -R 10001:0 "$DATA_DIR/mssql"
-sudo chmod -R 770 "$DATA_DIR/mssql"
-docker rm -f sqlpreview 2>/dev/null || true
-docker pull "$MSSQL_IMAGE"
-echo "🧠 RAM ${TOTAL_RAM_MB}MB > 2GB → dùng bản Express"
-docker run --pull always \
-    --network $NETWORK_NAME \
-    -e "ACCEPT_EULA=Y" \
-    -e "MSSQL_SA_PASSWORD=$MSSQL_PASSWORD" \
-    -e "MSSQL_PID=Express" \
-    -p 0.0.0.0:1433:1433 \
-    --name sqlpreview \
-    -v "$DATA_DIR/mssql":/var/opt/mssql:z \
-    -d "$MSSQL_IMAGE"
+echo "🗄️ Kiểm tra cấu hình để cài đặt MSSQL Server..."
+
+# Kiểm tra RAM
+TOTAL_RAM_MB=$(free -m | awk 'NR==2{print $2}')
+TOTAL_RAM_GB=$((TOTAL_RAM_MB / 1024))
+echo "🧠 RAM hiện tại: ${TOTAL_RAM_MB}MB (${TOTAL_RAM_GB}GB)"
+
+# Kiểm tra dung lượng đĩa
+DISK_AVAILABLE_GB=$(df -BG /home | awk 'NR==2 {print $4}' | sed 's/G//')
+echo "💾 Dung lượng đĩa khả dụng: ${DISK_AVAILABLE_GB}GB"
+
+# Kiểm tra CPU cores
+CPU_CORES=$(nproc)
+echo "⚡ CPU cores: ${CPU_CORES}"
+
+# Điều kiện tối thiểu cho MSSQL:
+# - RAM: tối thiểu 2GB (khuyến nghị 4GB+)
+# - Disk: tối thiểu 6GB cho cài đặt
+# - CPU: tối thiểu 1 core (khuyến nghị 2+ cores)
+
+if [ "$TOTAL_RAM_MB" -lt 2048 ]; then
+    echo "❌ RAM không đủ cho MSSQL Server (cần tối thiểu 2GB, hiện tại: ${TOTAL_RAM_MB}MB)"
+    echo "⏭️ Bỏ qua cài đặt MSSQL Server"
+elif [ "$DISK_AVAILABLE_GB" -lt 6 ]; then
+    echo "❌ Dung lượng đĩa không đủ cho MSSQL Server (cần tối thiểu 6GB, hiện tại: ${DISK_AVAILABLE_GB}GB)"
+    echo "⏭️ Bỏ qua cài đặt MSSQL Server"
+else
+    echo "✅ Cấu hình đủ điều kiện để cài đặt MSSQL Server"
+    echo "🗄️ Cài đặt MSSQL Server (Docker)..."
+    
+    mkdir -p "$DATA_DIR/mssql"
+    sudo chown -R 10001:0 "$DATA_DIR/mssql"
+    sudo chmod -R 770 "$DATA_DIR/mssql"
+    docker rm -f sqlpreview 2>/dev/null || true
+    docker pull "$MSSQL_IMAGE"
+    
+    # Chọn phiên bản phù hợp với RAM
+    if [ "$TOTAL_RAM_MB" -lt 4096 ]; then
+        echo "🧠 RAM ${TOTAL_RAM_MB}MB < 4GB → dùng bản Express"
+        MSSQL_PID="Express"
+    else
+        echo "🧠 RAM ${TOTAL_RAM_MB}MB ≥ 4GB → dùng bản Developer"
+        MSSQL_PID="Developer"
+    fi
+    
+    docker run --pull always \
+        --network $NETWORK_NAME \
+        -e "ACCEPT_EULA=Y" \
+        -e "MSSQL_SA_PASSWORD=$MSSQL_PASSWORD" \
+        -e "MSSQL_PID=$MSSQL_PID" \
+        -p 0.0.0.0:1433:1433 \
+        --name sqlpreview \
+        -v "$DATA_DIR/mssql":/var/opt/mssql:z \
+        -d "$MSSQL_IMAGE"
+        
+    echo "✅ MSSQL Server đã được cài đặt thành công!"
+    echo "🔗 Kết nối: localhost:1433"
+    echo "👤 Username: sa"
+    echo "🔑 Password: $MSSQL_PASSWORD"
+fi
 
 # ─────────────────────────────────────────────────────────────
 echo "🍃 Cài đặt MongoDB (Docker)..."
