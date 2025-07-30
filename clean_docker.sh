@@ -14,3 +14,8 @@ echo "Đang xóa tất cả volume..."
 docker volume ls -q | xargs -r docker volume rm
 
 echo "Đã xóa hết container, image và volume."
+
+# Xóa mạng Docker
+echo "Đang xóa mạng Docker..."
+docker network ls -q | xargs -r docker network rm
+echo "Mạng Docker đã được xóa."
