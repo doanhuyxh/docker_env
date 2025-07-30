@@ -351,8 +351,13 @@ show_usage() {
     echo "  bash init.sh all            # Cài đặt tất cả"
     echo "  bash init.sh status         # Chỉ hiển thị trạng thái"
     echo ""
-    echo "Ví dụ cho wget:"
+    echo "Chạy qua wget/curl (remote) - BẮT BUỘC có tham số:"
     echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s all"
+    echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s mysql"
+    echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s postgres"
+    echo ""
+    echo "  curl -fsSL https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s all"
+    echo "  curl -fsSL https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s mysql"
 }
 
 # Function xử lý tham số command line
@@ -410,6 +415,31 @@ setup_docker_infrastructure
 # Hiển thị trạng thái hiện tại
 show_container_status
 
+# Kiểm tra xem có đang chạy trong pipe không (ví dụ từ wget) - ưu tiên cao nhất
+if [ ! -t 0 ] && [ ! -t 1 ]; then
+    echo ""
+    echo "⚠️  Phát hiện script đang chạy qua pipe (wget/curl)"
+    # Chỉ chạy khi có tham số, không thì hiển thị hướng dẫn và thoát
+    if [ $# -gt 0 ]; then
+        echo "🚀 Chạy với tham số: $1"
+        handle_command_line_args "$1"
+        echo ""
+        echo "✅ Hoàn thành!"
+    else
+        echo ""
+        echo "❌ Lỗi: Khi chạy qua wget/curl, bạn phải chỉ định tham số!"
+        echo ""
+        show_usage
+        echo ""
+        echo "💡 Ví dụ đúng:"
+        echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s all"
+        echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s mysql"
+        echo ""
+        exit 1
+    fi
+    exit 0
+fi
+
 # Kiểm tra xem có tham số command line không
 if [ $# -gt 0 ]; then
     # Chạy với tham số command line (không interactive)
@@ -421,55 +451,55 @@ if [ $# -gt 0 ]; then
     exit 0
 fi
 
-# Kiểm tra xem có đang chạy trong pipe không (ví dụ từ wget)
-if [ ! -t 0 ]; then
+# Menu tương tác (chỉ khi chạy trực tiếp và có terminal)
+if [ -t 0 ] && [ -t 1 ]; then
+    while true; do
+        show_database_menu
+        read -p "Nhập lựa chọn của bạn (0-7): " choice
+        
+        case $choice in
+            1)
+                install_mysql
+                ;;
+            2)
+                install_postgres
+                ;;
+            3)
+                install_mongodb
+                ;;
+            4)
+                install_redis
+                ;;
+            5)
+                install_elasticsearch
+                ;;
+            6)
+                install_mssql
+                ;;
+            7)
+                install_all_databases
+                ;;
+            0)
+                echo "👋 Thoát script. Cảm ơn bạn đã sử dụng!"
+                exit 0
+                ;;
+            *)
+                echo "❌ Lựa chọn không hợp lệ. Vui lòng chọn từ 0-7."
+                ;;
+        esac
+        
+        echo ""
+        read -p "Nhấn Enter để tiếp tục..."
+        echo ""
+    done
+else
+    # Nếu không có terminal interactive, hiển thị lỗi và thoát
     echo ""
-    echo "⚠️  Phát hiện script đang chạy trong pipe (có thể từ wget)"
-    echo "🔄 Tự động cài đặt tất cả database..."
-    install_all_databases
+    echo "❌ Lỗi: Không thể chạy menu tương tác!"
+    echo "� Script này cần được chạy trong terminal hoặc với tham số cụ thể."
     echo ""
-    echo "✅ Hoàn thành!"
-    exit 0
+    show_usage
+    echo ""
+    exit 1
 fi
-
-# Menu tương tác (chỉ khi chạy trực tiếp)
-while true; do
-    show_database_menu
-    read -p "Nhập lựa chọn của bạn (0-7): " choice
-    
-    case $choice in
-        1)
-            install_mysql
-            ;;
-        2)
-            install_postgres
-            ;;
-        3)
-            install_mongodb
-            ;;
-        4)
-            install_redis
-            ;;
-        5)
-            install_elasticsearch
-            ;;
-        6)
-            install_mssql
-            ;;
-        7)
-            install_all_databases
-            ;;
-        0)
-            echo "👋 Thoát script. Cảm ơn bạn đã sử dụng!"
-            exit 0
-            ;;
-        *)
-            echo "❌ Lựa chọn không hợp lệ. Vui lòng chọn từ 0-7."
-            ;;
-    esac
-    
-    echo ""
-    read -p "Nhấn Enter để tiếp tục..."
-    echo ""
-done
 
