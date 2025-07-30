@@ -334,6 +334,69 @@ install_all_databases() {
     echo "✅ Tất cả các dịch vụ cơ sở dữ liệu đã được cài đặt thành công!"
 }
 
+# Function hiển thị hướng dẫn sử dụng
+show_usage() {
+    echo "🔧 Cách sử dụng script:"
+    echo "====================================="
+    echo "Chạy interactive menu:"
+    echo "  bash init.sh"
+    echo ""
+    echo "Chạy với tham số (không interactive):"
+    echo "  bash init.sh mysql          # Cài đặt MySQL"
+    echo "  bash init.sh postgres       # Cài đặt PostgreSQL"
+    echo "  bash init.sh mongodb        # Cài đặt MongoDB"
+    echo "  bash init.sh redis          # Cài đặt Redis"
+    echo "  bash init.sh elasticsearch  # Cài đặt Elasticsearch"
+    echo "  bash init.sh mssql          # Cài đặt MSSQL Server"
+    echo "  bash init.sh all            # Cài đặt tất cả"
+    echo "  bash init.sh status         # Chỉ hiển thị trạng thái"
+    echo ""
+    echo "Ví dụ cho wget:"
+    echo "  wget -O - https://raw.githubusercontent.com/user/repo/main/init.sh | bash -s all"
+}
+
+# Function xử lý tham số command line
+handle_command_line_args() {
+    local action=$1
+    
+    case $action in
+        "mysql")
+            install_mysql
+            ;;
+        "postgres")
+            install_postgres
+            ;;
+        "mongodb")
+            install_mongodb
+            ;;
+        "redis")
+            install_redis
+            ;;
+        "elasticsearch")
+            install_elasticsearch
+            ;;
+        "mssql")
+            install_mssql
+            ;;
+        "all")
+            install_all_databases
+            ;;
+        "status")
+            # Chỉ hiển thị trạng thái, không cài đặt gì
+            ;;
+        "help"|"-h"|"--help")
+            show_usage
+            exit 0
+            ;;
+        *)
+            echo "❌ Tham số không hợp lệ: $action"
+            echo ""
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
 # Main script
 echo "🔧 Script cài đặt Database với Docker"
 echo "====================================="
@@ -347,7 +410,29 @@ setup_docker_infrastructure
 # Hiển thị trạng thái hiện tại
 show_container_status
 
-# Menu chính
+# Kiểm tra xem có tham số command line không
+if [ $# -gt 0 ]; then
+    # Chạy với tham số command line (không interactive)
+    echo ""
+    echo "🚀 Chạy với tham số: $1"
+    handle_command_line_args "$1"
+    echo ""
+    echo "✅ Hoàn thành!"
+    exit 0
+fi
+
+# Kiểm tra xem có đang chạy trong pipe không (ví dụ từ wget)
+if [ ! -t 0 ]; then
+    echo ""
+    echo "⚠️  Phát hiện script đang chạy trong pipe (có thể từ wget)"
+    echo "🔄 Tự động cài đặt tất cả database..."
+    install_all_databases
+    echo ""
+    echo "✅ Hoàn thành!"
+    exit 0
+fi
+
+# Menu tương tác (chỉ khi chạy trực tiếp)
 while true; do
     show_database_menu
     read -p "Nhập lựa chọn của bạn (0-7): " choice
