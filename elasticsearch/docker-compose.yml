@@ -1,0 +1,13 @@
+services:
+  elacticsearch:
+    image: elasticsearch:latest
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - ./es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped

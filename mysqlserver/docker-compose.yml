@@ -1,0 +1,14 @@
+services:
+  mysqlserver:
+    image: mysql:latest
+    container_name: mysqlserver
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "mysqlpassword2025"
+      MYSQL_DATABASE: "mydatabase"
+      MYSQL_USER: "myuser"
+      MYSQL_PASSWORD: "mypassword2025"
+    restart: unless-stopped

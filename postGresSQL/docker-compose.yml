@@ -1,0 +1,13 @@
+services:
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresql_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: pgpassword2025
+      POSTGRES_DB: mydatabase
+    restart: unless-stopped
