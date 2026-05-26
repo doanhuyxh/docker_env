@@ -65,4 +65,12 @@ systemctl enable --now docker
 echo "Cài đặt docker compose"
 docker compose version
 # ─────────────────────────────────────────────────────────────
+# Swap file
+echo "Tạo swap file 4GB..."
+fallocate -l 4G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+# ─────────────────────────────────────────────────────────────
 echo "✅ Cài đặt hoàn tất! Hãy tận hưởng VPS của bạn! 🚀"
