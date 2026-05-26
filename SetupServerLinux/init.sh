@@ -35,8 +35,8 @@ systemctl restart sshd --quiet
 # ─────────────────────────────────────────────────────────────
 echo "🌐 Cài đặt NGINX và Certbot..., add port HTTP/HTTPS vào firewall"
 dnf install -y nginx certbot python3-certbot-nginx
-firewall-cmd --permanent --add-service=80/tcp
-firewall-cmd --permanent --add-service=443/tcp
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=443/tcp
 firewall-cmd --reload
 systemctl enable --now nginx
 # ─────────────────────────────────────────────────────────────
