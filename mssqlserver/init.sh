@@ -22,7 +22,7 @@ esac
 
 # Tạo thư mục bind mount nếu chưa tồn tại
 mkdir -p "$BIND_MOUNT_PATH"
-
+chmod 777 "$BIND_MOUNT_PATH"
 # Tạo Docker network nếu chưa tồn tại
 NETWORK_NAME="docker-app-network"
 docker network create $NETWORK_NAME 2>/dev/null || true
