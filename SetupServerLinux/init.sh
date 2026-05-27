@@ -2,6 +2,10 @@
 echo "🚀 Cập nhật hệ thống..."
 dnf update -y
 # ─────────────────────────────────────────────────────────────
+echo "💻 Cài đặt Python..."
+dnf install -y python3 python3-pip
+dnf install -y python3-venv
+# ─────────────────────────────────────────────────────────────
 # Thiết lập múi giờ
 echo "🌏 Thiết lập múi giờ Asia/Ho_Chi_Minh..."
 timedatectl set-timezone Asia/Ho_Chi_Minh
@@ -48,10 +52,6 @@ export NVM_DIR="$HOME/.nvm"
 nvm install 24
 npm install -g pm2
 npm install -g yarn
-# ─────────────────────────────────────────────────────────────
-echo "💻 Cài đặt Python..."
-dnf install -y python3 python3-pip
-dnf install -y python3-venv
 # ─────────────────────────────────────────────────────────────
 echo "💻 Cài đặt .NET SDK 8.0..."
 dnf install -y dotnet-sdk-8.0
