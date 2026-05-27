@@ -80,7 +80,13 @@ echo "🛡️ Cài đặt auditd để giám sát SSH..."
 apt install -y auditd
 systemctl enable --now auditd
 sed -i 's/#LogLevel INFO/LogLevel VERBOSE/' /etc/ssh/sshd_config
-systemctl restart sshd --quiet
+if systemctl list-unit-files | grep -q '^ssh.service'; then
+  systemctl restart ssh --quiet
+elif systemctl list-unit-files | grep -q '^sshd.service'; then
+  systemctl restart sshd --quiet
+else
+  echo "⚠️ Không tìm thấy service ssh/sshd, vui lòng kiểm tra thủ công."
+fi
 
 # ─────────────────────────────────────────────────────────────
 echo "🌐 Cài đặt NGINX và Certbot..."
@@ -90,15 +96,8 @@ ufw allow 'Nginx HTTP'
 ufw allow 'Nginx HTTPS'
 # ─────────────────────────────────────────────────────────────
 echo "🐳 Cài đặt Docker..."
-apt remove -y docker docker-engine docker.io containerd runc || true
-apt install -y apt-transport-https ca-certificates gnupg lsb-release curl
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt update -y
-apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-systemctl enable --now docker
-usermod -aG docker $SUDO_USER || true
+apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
