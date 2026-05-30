@@ -1,11 +1,11 @@
 services:
   postgresql:
-    image: postgres:latest
+    image: postgres:18
     container_name: postgresql
     ports:
       - "5432:5432"
     volumes:
-      - ./postgresql_data:/var/lib/postgresql/data
+      - ./postgresql_data:/var/lib/postgresql
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: pgpassword2025
