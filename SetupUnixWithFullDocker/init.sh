@@ -91,10 +91,7 @@ services:
     restart: unless-stopped
     environment:
       TZ: "Asia/Ho_Chi_Minh"
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
+    network_mode: host
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
