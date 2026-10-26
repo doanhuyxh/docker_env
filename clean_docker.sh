@@ -19,3 +19,6 @@ echo "Đã xóa hết container, image và volume."
 echo "Đang xóa mạng Docker..."
 docker network ls -q | xargs -r docker network rm
 echo "Mạng Docker đã được xóa."
+
+# bật lại các container đang tắt
+docker start $(docker ps -a -q -f status=exited)
